@@ -14,6 +14,9 @@ export default function Side() {
         <li className="mb-2">
           <a href="/despesas" className="hover:text-blue-400">Despesas</a>
         </li>
+        <li className="mb-2">
+          <a href="/eventos" className="hover:text-blue-400">Eventos</a>
+        </li>
         
       </ul>
     </nav>

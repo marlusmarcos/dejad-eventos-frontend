@@ -95,15 +95,7 @@ const Home: React.FC = () => {
     <div>
       <Filter onFilterChange={setEventoId} />
       <Table dadosTabela={dadosTabela} colunasTabela={columns} renderCell={renderCell} onEdit={handleEdit} />
-      {selectedItem && (
-        <EditPaymentModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleSave}
-          id={selectedItem.id}
-          valorPago={selectedItem.valorTotalPago}
-        />
-      )}
+
     </div>
   );
 };

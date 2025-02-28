@@ -8,7 +8,6 @@ import Pagamentos from './ListarPagamentosIndividual';
 
 const ParticipantesPage: React.FC = () => {
   const [isCadastrarPessoaModalOpen, setCadastrarPessoaModalOpen] = useState(false);
-  const [isCadastrarPessoaEventoModalOpen, setCadastrarPessoaEventoModalOpen] = useState(false);
   const [isListarPessoasModalOpen, setListarPessoasModalOpen] = useState(false);
 
   return (
@@ -17,11 +16,9 @@ const ParticipantesPage: React.FC = () => {
       <h1>Participantes</h1>
       <p>Bem-vindo à página de participantes!</p>
       <button onClick={() => setCadastrarPessoaModalOpen(true)}>Cadastrar Pessoa</button>
-      <button onClick={() => setCadastrarPessoaEventoModalOpen(true)}>Cadastrar Pessoa no Evento</button>
       <button onClick={() => setListarPessoasModalOpen(true)}>Listar Pessoas </button>
       {/* <ParticipantesList /> */}
       <CadastrarPessoaModal isOpen={isCadastrarPessoaModalOpen} onClose={() => setCadastrarPessoaModalOpen(false)} />
-      <CadastrarPessoaEventoModal isOpen={isCadastrarPessoaEventoModalOpen} onClose={() => setCadastrarPessoaEventoModalOpen(false)} />
       <CadastrarDespesa/>
       <Pagamentos/>
     </div>
