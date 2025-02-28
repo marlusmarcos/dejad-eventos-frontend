@@ -1,31 +1,45 @@
 'use client';
-import { useEffect, useState } from 'react';
-import FormModal from '../components/FormModal';
+import React, { useState, useEffect } from 'react';
+import FormModal from './FormModal';
+
+interface Pessoa {
+  id: number;
+  nome: string;
+  congregacao: {
+    nome: string;
+  };
+}
 
 interface Evento {
   id: number;
   nome: string;
 }
 
-interface Despesa {
-  evento: {
-    id: number;
-  };
-  descricao: string;
-  valor: number;
-  data: string;
-}
-
-export default function CadastrarDespesa() {
-
+const FormCadastro: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [pessoas, setPessoas] = useState<Pessoa[]>([]);
   const [eventos, setEventos] = useState<Evento[]>([]);
+  const [selectedPessoa, setSelectedPessoa] = useState<number | null>(null);
   const [selectedEvento, setSelectedEvento] = useState<number | null>(null);
-  const [descricao, setDescricao] = useState<string>('');
   const [valor, setValor] = useState<number>(0);
   const [data, setData] = useState<string>('');
+  const [parcela, setParcela] = useState<number>(1);
+  const [descricao, setDescricao] = useState<string>('');
 
   useEffect(() => {
+    const fetchPessoas = async () => {
+      try {
+        const res = await fetch('http://localhost:8080/api/pessoa');
+        if (!res.ok) {
+          throw new Error('Falha ao carregar pessoas');
+        }
+        const data: Pessoa[] = await res.json();
+        setPessoas(data);
+      } catch (err) {
+        console.error('Erro ao carregar pessoas', err);
+      }
+    };
+
     const fetchEventos = async () => {
       try {
         const res = await fetch('http://localhost:8080/api/evento');
@@ -38,44 +52,51 @@ export default function CadastrarDespesa() {
         console.error('Erro ao carregar eventos', err);
       }
     };
+
+    fetchPessoas();
     fetchEventos();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedEvento === null) {
+    if (selectedPessoa === null || selectedEvento === null) {
       return;
     }
-    const despesa: Despesa = {
+    const pessoaEvento = {
+      pessoa: { id: selectedPessoa },
       evento: { id: selectedEvento },
-      descricao,
       valor,
       data,
+      parcela,
+      descricao,
     };
-    console.log(despesa);
+    console.log(JSON.stringify(pessoaEvento));
     try {
-      const res = await fetch('http://localhost:8080/api/despesa', {
+      const res = await fetch(`http://localhost:8080/api/pagamento`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(despesa),
+        body: JSON.stringify(pessoaEvento),
       });
       if (!res.ok) {
-        throw new Error('Falha ao cadastrar despesa');
+        throw new Error('Falha ao cadastrar pessoa no evento');
       }
-      // Reset form fields after successful submission
-      setSelectedEvento(null);
-      setDescricao('');
-      setValor(0);
-      setData('');
+      setIsOpen(false);
     } catch (err) {
-      console.error('Erro ao cadastrar despesa', err);
+      console.error('Erro ao cadastrar pessoa no evento', err);
     }
   };
 
-const fields = [
-
+  const fields = [
+    {
+      label: 'Pessoa',
+      name: 'pessoa',
+      type: 'select',
+      value: selectedPessoa ?? '',
+      options: pessoas.map(pessoa => ({ value: pessoa.id, label: `${pessoa.nome} - ${pessoa.congregacao.nome}` })),
+      onChange: (e: React.ChangeEvent<HTMLSelectElement>) => setSelectedPessoa(parseInt(e.target.value, 10)),
+    },
     {
       label: 'Evento',
       name: 'evento',
@@ -99,6 +120,13 @@ const fields = [
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => setData(e.target.value),
     },
     {
+      label: 'Parcela',
+      name: 'parcela',
+      type: 'number',
+      value: parcela,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setParcela(parseInt(e.target.value, 10)),
+    },
+    {
       label: 'Descrição',
       name: 'descricao',
       type: 'text',
@@ -107,21 +135,18 @@ const fields = [
     },
   ];
 
-
-
   return (
     <div>
-      <h2>Cadastrar Despesa</h2>
-      <button onClick={() => setIsOpen(true)}>nova despesa</button>
+      <button onClick={() => setIsOpen(true)}>Cadastrar Pessoa no Evento</button>
       <FormModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        title="Cadastrar nova despesa"
+        title="Cadastrar Pessoa no Evento"
         fields={fields}
         onSubmit={handleSubmit}
       />
-
-
     </div>
   );
-}
+};
+
+export default FormCadastro;

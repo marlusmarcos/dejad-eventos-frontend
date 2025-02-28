@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import React from 'react';
 import Table from '../components/Table';
 import EditPaymentModal from '../components/EditPaymentModal';
+import FormCadastro from '../components/FormCadastro';
 
 interface TabelaData {
   id: number;
@@ -95,7 +96,7 @@ const Home: React.FC = () => {
     <div>
       <Filter onFilterChange={setEventoId} />
       <Table dadosTabela={dadosTabela} colunasTabela={columns} renderCell={renderCell} onEdit={handleEdit} />
-
+      <FormCadastro />
     </div>
   );
 };
