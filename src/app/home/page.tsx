@@ -93,8 +93,8 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div>
-      <Filter onFilterChange={setEventoId} />
+    <div className='flex justify-start flex-col '>
+      <Filter onFilterChange={setEventoId}  />
       <Table dadosTabela={dadosTabela} colunasTabela={columns} renderCell={renderCell} onEdit={handleEdit} />
       <FormCadastro />
     </div>

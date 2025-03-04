@@ -137,7 +137,10 @@ const FormCadastro: React.FC = () => {
 
   return (
     <div>
-      <button onClick={() => setIsOpen(true)}>Cadastrar Pessoa no Evento</button>
+      <button onClick={() => setIsOpen(true)}
+        className="flex items-center justify-center w-full max-w-xs p-4 mb-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 my-2"
+        
+        >Cadastrar Pessoa no Evento</button>
       <FormModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}

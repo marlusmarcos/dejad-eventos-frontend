@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
+import FormModal from '../components/FormModal';
 
 interface CadastrarPessoaModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ interface Congregacao {
   setor: {
     id: number;
     nome: string;
-  }
+  };
 }
 
 interface Pessoa {
@@ -28,11 +29,22 @@ const CadastrarPessoaModal: React.FC<CadastrarPessoaModalProps> = ({ isOpen, onC
   const [congregacao, setCongregacao] = useState<Congregacao[]>([]);
   const [selectedCongregacao, setSelectedCongregacao] = useState<string | null>(null);
 
-  const handleEventoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const congregacaoValue = e.target.value;
-    setSelectedCongregacao(congregacaoValue);
-    console.log(congregacaoValue);
-  };
+  useEffect(() => {
+    const fetchCongregacoes = async () => {
+      try {
+        const res = await fetch('http://localhost:8080/api/congregacao');
+        if (!res.ok) {
+          throw new Error('Falha ao carregar congregações');
+        }
+        const data = await res.json();
+        setCongregacao(data);
+      } catch (err) {
+        console.error('Erro ao carregar congregações', err);
+      }
+    };
+
+    fetchCongregacoes();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,57 +67,32 @@ const CadastrarPessoaModal: React.FC<CadastrarPessoaModalProps> = ({ isOpen, onC
     }
   };
 
-  useEffect(() => {
-    const fetchCongregacoes = async () => {
-      try {
-        const res = await fetch('http://localhost:8080/api/congregacao');
-        if (!res.ok) {
-          throw new Error('Falha ao carregar congregações');
-        }
-        const data = await res.json();
-        setCongregacao(data);
-      } catch (err) {
-        console.error('Erro ao carregar congregações', err);
-      }
-    };
-
-    fetchCongregacoes();
-  }, []);
-
-  if (!isOpen) {
-    return null;
-  }
+  const fields = [
+    {
+      label: 'Nome',
+      name: 'nome',
+      type: 'text',
+      value: nome,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setNome(e.target.value),
+    },
+    {
+      label: 'Congregação',
+      name: 'congregacao',
+      type: 'select',
+      value: selectedCongregacao ?? '',
+      options: congregacao.map((c) => ({ value: c.id, label: c.nome })),
+      onChange: (e: React.ChangeEvent<HTMLSelectElement>) => setSelectedCongregacao(e.target.value),
+    },
+  ];
 
   return (
-    <div className="modal">
-      <div className="modal-content">
-        <h2>Cadastrar Pessoa</h2>
-        <form onSubmit={handleSubmit}>
-          <label>
-            Nome:
-            <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} required />
-          </label>
-          <label>
-            Congregação:
-            <select
-              id="years"
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              onChange={handleEventoChange}
-              value={selectedCongregacao ?? ''}
-            >
-              <option value="">Selecione uma congregação</option>
-              {congregacao.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="submit">Cadastrar</button>
-          <button type="button" onClick={onClose}>Cancelar</button>
-        </form>
-      </div>
-    </div>
+    <FormModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Cadastrar Pessoa"
+      fields={fields}
+      onSubmit={handleSubmit}
+    />
   );
 };
 

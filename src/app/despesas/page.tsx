@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Table from '../components/Table';
-
+import CadastrarDespesa from './cadastrarDespesa';
 export interface Evento {
   id: number;
   nome: string;
@@ -73,8 +73,14 @@ export default function Despesas() {
 
   return (
     <div>
+      <div className='flex gap-2'>
       <h1>Despesas</h1>
-      <button onClick={fetchDespesas} className='bg-slate-500 border-spacing-1 px-2 text-white'>Listar despesas</button>
+      <button onClick={() => fetchDespesas()} data-modal-target="default-modal" data-modal-toggle="default-modal" className="block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-1 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" type="button">
+  Listar 
+      </button>
+      <CadastrarDespesa />
+      </div>
+
       <div>
         <Table dadosTabela={despesas} colunasTabela={columns} renderCell={renderCell} />
       </div>
