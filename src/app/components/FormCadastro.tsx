@@ -5,6 +5,7 @@ import FormModal from './FormModal';
 interface Pessoa {
   id: number;
   nome: string;
+  sexo: string;
   congregacao: {
     nome: string;
   };

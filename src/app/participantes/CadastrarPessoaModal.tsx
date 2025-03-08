@@ -19,6 +19,7 @@ interface Congregacao {
 
 interface Pessoa {
   nome: string;
+  sexo: string;
   congregacao: {
     id: number;
   };
@@ -26,6 +27,7 @@ interface Pessoa {
 
 const CadastrarPessoaModal: React.FC<CadastrarPessoaModalProps> = ({ isOpen, onClose }) => {
   const [nome, setNome] = useState('');
+  const [sexo, setSexo] = useState('');
   const [congregacao, setCongregacao] = useState<Congregacao[]>([]);
   const [selectedCongregacao, setSelectedCongregacao] = useState<string | null>(null);
 
@@ -48,7 +50,7 @@ const CadastrarPessoaModal: React.FC<CadastrarPessoaModalProps> = ({ isOpen, onC
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const pessoa: Pessoa = { nome, congregacao: { id: parseInt(selectedCongregacao ?? '', 10) } };
+    const pessoa: Pessoa = { nome, congregacao: { id: parseInt(selectedCongregacao ?? '', 10) }, sexo };
     console.log(pessoa);
     try {
       const res = await fetch('http://localhost:8080/api/pessoa', {
@@ -74,6 +76,13 @@ const CadastrarPessoaModal: React.FC<CadastrarPessoaModalProps> = ({ isOpen, onC
       type: 'text',
       value: nome,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => setNome(e.target.value),
+    },
+    {
+      label: 'Sexo',
+      name: 'sexo',
+      type: 'text',
+      value: sexo,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setSexo(e.target.value),
     },
     {
       label: 'Congregação',
