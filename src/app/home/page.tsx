@@ -13,6 +13,8 @@ interface TabelaData {
   nomeEvento: string;
   valorTotalPago: number;
   data: string;
+  tipoPagamento: number;
+  custoPorPessoa: number; 
 }
 
 const columns = ['participante', 'igreja', 'evento', 'valor pago'];
@@ -23,10 +25,16 @@ const renderCell = (item: TabelaData, column: string) => {
       return item.nomePessoa;
     case 'igreja':
       return item.congregacao;
-    case 'evento': 
+    case 'evento':
       return item.nomeEvento;
     case 'valor pago':
-      return item.valorTotalPago;
+      // Condição para aplicar o estilo verde
+      const deveSerVerde = item.tipoPagamento === 1 || item.valorTotalPago >= item.custoPorPessoa;
+      return (
+        <strong className={deveSerVerde ? 'text-green-500' : 'text-red-500'}>
+          {item.valorTotalPago}
+        </strong>
+      );
     default:
       return null;
   }

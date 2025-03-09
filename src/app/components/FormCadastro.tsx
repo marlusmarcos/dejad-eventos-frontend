@@ -2,6 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import FormModal from './FormModal';
 
+enum TipoPagamento {
+  CARTAO_CREDITO = 'CARTAO_CREDITO',
+  PROMOCIONAL = 'PROMOCIONAL',
+  PIX = 'PIX',
+  DINHEIRO = 'DINHEIRO'
+}
+
 interface Pessoa {
   id: number;
   nome: string;
@@ -26,6 +33,7 @@ const FormCadastro: React.FC = () => {
   const [data, setData] = useState<string>('');
   const [parcela, setParcela] = useState<number>(1);
   const [descricao, setDescricao] = useState<string>('');
+  const [tipoPagamento, setTipoPagamento] = useState<TipoPagamento | null>(null); // Novo estado
 
   useEffect(() => {
     const fetchPessoas = async () => {
@@ -60,7 +68,7 @@ const FormCadastro: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedPessoa === null || selectedEvento === null) {
+    if (selectedPessoa === null || selectedEvento === null || tipoPagamento === null) {
       return;
     }
     const pessoaEvento = {
@@ -70,6 +78,7 @@ const FormCadastro: React.FC = () => {
       data,
       parcela,
       descricao,
+      tipoPagamento, // Novo campo
     };
     console.log(JSON.stringify(pessoaEvento));
     try {
@@ -134,14 +143,23 @@ const FormCadastro: React.FC = () => {
       value: descricao,
       onChange: (e: React.ChangeEvent<HTMLInputElement>) => setDescricao(e.target.value),
     },
+    {
+      label: 'Tipo de Pagamento',
+      name: 'tipoPagamento',
+      type: 'select',
+      value: tipoPagamento ?? '',
+      options: Object.values(TipoPagamento).map((tipo) => ({ value: tipo, label: tipo })),
+      onChange: (e: React.ChangeEvent<HTMLSelectElement>) => setTipoPagamento(e.target.value as TipoPagamento),
+    },
   ];
 
   return (
     <div>
       <button onClick={() => setIsOpen(true)}
         className="flex items-center justify-center w-full max-w-xs p-4 mb-4 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 my-2"
-        
-        >Cadastrar Pessoa no Evento</button>
+      >
+        Cadastrar Pessoa no Evento
+      </button>
       <FormModal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}

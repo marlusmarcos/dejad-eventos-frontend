@@ -1,6 +1,13 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 
+enum TipoPagamento {
+  CARTAO_CREDITO = 'CARTAO_CREDITO',
+  BOLETO = 'BOLETO',
+  PIX = 'PIX',
+  DINHEIRO = 'DINHEIRO'
+}
+
 interface Pessoa {
   id: number;
   nome: string;
@@ -34,6 +41,7 @@ interface pessoaEventoDTO {
   data: string;
   parcela: number;
   descricao: string;
+  tipoPagamento: TipoPagamento; // Novo campo
 }
 
 const CadastrarPessoaEventoModal: React.FC<CadastrarPessoaEventoModalProps> = ({ isOpen, onClose }) => {
@@ -45,6 +53,7 @@ const CadastrarPessoaEventoModal: React.FC<CadastrarPessoaEventoModalProps> = ({
   const [data, setData] = useState<string>('');
   const [parcela, setParcela] = useState<number>(1);
   const [descricao, setDescricao] = useState<string>('');
+  const [tipoPagamento, setTipoPagamento] = useState<TipoPagamento | null>(null); // Novo estado
 
   useEffect(() => {
     const fetchPessoas = async () => {
@@ -79,7 +88,7 @@ const CadastrarPessoaEventoModal: React.FC<CadastrarPessoaEventoModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedPessoa === null || selectedEvento === null) {
+    if (selectedPessoa === null || selectedEvento === null || tipoPagamento === null) {
       return;
     }
     const pessoaEvento: pessoaEventoDTO = {
@@ -89,6 +98,7 @@ const CadastrarPessoaEventoModal: React.FC<CadastrarPessoaEventoModalProps> = ({
       data,
       parcela,
       descricao,
+      tipoPagamento, // Novo campo
     };
     console.log(JSON.stringify(pessoaEvento));
     try {
@@ -204,6 +214,22 @@ const CadastrarPessoaEventoModal: React.FC<CadastrarPessoaEventoModalProps> = ({
                   required
                   className="block w-full mt-1 p-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
                 />
+              </label>
+              <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                Tipo de Pagamento:
+                <select
+                  value={tipoPagamento ?? ''}
+                  onChange={(e) => setTipoPagamento(e.target.value as TipoPagamento)}
+                  required
+                  className="block w-full mt-1 p-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                >
+                  <option value="">Selecione o tipo de pagamento</option>
+                  {Object.values(TipoPagamento).map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
+                    </option>
+                  ))}
+                </select>
               </label>
               <div className="flex items-center p-4 md:p-5 border-t border-gray-200 rounded-b dark:border-gray-600">
                 <button
