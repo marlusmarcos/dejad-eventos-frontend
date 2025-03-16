@@ -14,7 +14,7 @@ interface TabelaData {
   valorTotalPago: number;
   data: string;
   tipoPagamento: number;
-  custoPorPessoa: number; 
+  custoPorPessoa: number;
 }
 
 const columns = ['participante', 'igreja', 'evento', 'valor pago'];
@@ -28,10 +28,10 @@ const renderCell = (item: TabelaData, column: string) => {
     case 'evento':
       return item.nomeEvento;
     case 'valor pago':
-      // Condição para aplicar o estilo verde
       const deveSerVerde = item.tipoPagamento === 1 || item.valorTotalPago >= item.custoPorPessoa;
+      const amarelo = item.valorTotalPago > 0 && item.valorTotalPago < item.custoPorPessoa;
       return (
-        <strong className={deveSerVerde ? 'text-green-500' : 'text-red-500'}>
+        <strong className={deveSerVerde ? 'text-green-500' : (amarelo ? 'text-yellow-500' : 'text-red-500')}>
           {item.valorTotalPago}
         </strong>
       );
@@ -46,6 +46,8 @@ const Home: React.FC = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedItem, setSelectedItem] = React.useState<TabelaData | null>(null);
+  const [quantidadePagas, setQuantidadePagas] = useState(0);
+  const [quantidadeNaoPagas, setQuantidadeNaoPagas] = useState(0);
 
   useEffect(() => {
     if (eventoId === null) return;
@@ -67,6 +69,26 @@ const Home: React.FC = () => {
     fetchDados();
   }, [eventoId]);
 
+  useEffect(() => {
+    if (dadosTabela.length > 0) {
+      const { pagas, naoPagas } = dadosTabela.reduce(
+        (acc, item) => {
+          const estaPaga = item.tipoPagamento === 1 || item.valorTotalPago >= item.custoPorPessoa;
+          if (estaPaga) {
+            acc.pagas += 1;
+          } else {
+            acc.naoPagas += 1;
+          }
+          return acc;
+        },
+        { pagas: 0, naoPagas: 0 }
+      );
+
+      setQuantidadePagas(pagas);
+      setQuantidadeNaoPagas(naoPagas);
+    }
+  }, [dadosTabela]);
+
   const handleEdit = (item: TabelaData) => {
     setSelectedItem(item);
     setIsModalOpen(true);
@@ -83,13 +105,11 @@ const Home: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ valor: formattedValorPago }),
-        
       });
       if (!res.ok) {
-        
         throw new Error('Falha ao atualizar pagamento');
       }
-      console.log(res)
+      console.log(res);
       setDadosTabela((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, valorTotalPago: valorPago } : item
@@ -101,8 +121,18 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className='flex justify-start flex-col '>
-      <Filter onFilterChange={setEventoId}  />
+    <div className='flex justify-start flex-col'>
+      <Filter onFilterChange={setEventoId} />
+
+      {/* Exibir quantidades de pagas e não pagas */}
+      <div className="flex gap-4 mb-4">
+        <div className="p-4 bg-green-100 rounded-lg">
+          <span className="text-green-700 font-bold">Pagas: {quantidadePagas}</span>
+        </div>
+        <div className="p-4 bg-red-100 rounded-lg">
+          <span className="text-red-700 font-bold">Não Pagas: {quantidadeNaoPagas}</span>
+        </div>
+      </div>
 
       <Table dadosTabela={dadosTabela} colunasTabela={columns} renderCell={renderCell} onEdit={handleEdit} />
       <FormCadastro />

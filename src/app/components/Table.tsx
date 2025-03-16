@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -60,25 +60,59 @@ interface TableProps {
 }
 
 const Table: React.FC<TableProps> = ({ dadosTabela, colunasTabela, renderCell, onEdit }) => {
-  const count = dadosTabela.length;
+  const [congregacaoFiltro, setCongregacaoFiltro] = useState<string>('');
+  
+  // Filtra os dados com base na congregação selecionada
+  const dadosFiltrados = useMemo(() => {
+    if (!congregacaoFiltro) {
+      return dadosTabela; // Se nenhum filtro for selecionado, retorna todos os dados
+    }
+    return dadosTabela.filter(item => item.congregacao === congregacaoFiltro); // Filtra os dados pela congregação
+  }, [dadosTabela, congregacaoFiltro]);
+
+  const congregacoes = useMemo(() => {
+    // Cria uma lista de congregações únicas a partir dos dados
+    return Array.from(new Set(dadosTabela.map(item => item.congregacao)));
+  }, [dadosTabela]);
+
+  const count = dadosFiltrados.length;
 
   return (
     <div className="relative overflow-x-auto pl-0 pr-8">
       <h2 className="text-lg font-semibold mb-4">Total de pessoas: {count}</h2>
-      {/* Botão para exportar PDF */}
+
+      {/* Filtro de Congregação */}
+      <div className="mb-4">
+        <label htmlFor="congregacao" className="text-sm mr-2">Filtrar por Congregação:</label>
+        <select
+          id="congregacao"
+          value={congregacaoFiltro}
+          onChange={(e) => setCongregacaoFiltro(e.target.value)}
+          className="px-4 py-2 border rounded"
+        >
+          <option value="">Todas</option>
+          {congregacoes.map((congregacao, index) => (
+            <option key={index} value={congregacao}>
+              {congregacao}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Botões de exportação */}
       <button
         onClick={exportToPDF}
         className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
       >
         Exportar para PDF
       </button>
-      {/* Botão para exportar CSV */}
       <button
-        onClick={() => exportToCSV(dadosTabela, colunasTabela, renderCell)}
+        onClick={() => exportToCSV(dadosFiltrados, colunasTabela, renderCell)}
         className="bg-green-500 text-white px-4 py-2 rounded mb-4 ml-2"
       >
         Exportar para Google Planilhas (CSV)
       </button>
+
       {/* Tabela com ID para captura */}
       <table id="table-to-export" className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
         <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
@@ -92,7 +126,7 @@ const Table: React.FC<TableProps> = ({ dadosTabela, colunasTabela, renderCell, o
           </tr>
         </thead>
         <tbody>
-          {dadosTabela.map((item, index) => (
+          {dadosFiltrados.map((item, index) => (
             <tr
               key={index}
               className={`${
