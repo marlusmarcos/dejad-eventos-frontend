@@ -48,6 +48,8 @@ const Home: React.FC = () => {
   const [selectedItem, setSelectedItem] = React.useState<TabelaData | null>(null);
   const [quantidadePagas, setQuantidadePagas] = useState(0);
   const [quantidadeNaoPagas, setQuantidadeNaoPagas] = useState(0);
+  const [congregacoes, setCongregacoes] = useState<string[]>([]);
+  const [selectedCongregacao, setSelectedCongregacao] = useState<string | null>(null);
 
   useEffect(() => {
     if (eventoId === null) return;
@@ -89,6 +91,23 @@ const Home: React.FC = () => {
     }
   }, [dadosTabela]);
 
+  useEffect(() => {
+    const fetchCongregacoes = async () => {
+      try {
+        const res = await fetch('http://localhost:8080/api/congregacao');
+        if (!res.ok) {
+          throw new Error('Falha ao carregar congregações');
+        }
+        const data = await res.json();
+        setCongregacoes(data.map((congregacao: any) => congregacao.nome));
+      } catch (err) {
+        console.error('Erro ao carregar congregações', err);
+      }
+    };
+
+    fetchCongregacoes();
+  }, []);
+
   const handleEdit = (item: TabelaData) => {
     setSelectedItem(item);
     setIsModalOpen(true);
@@ -120,11 +139,14 @@ const Home: React.FC = () => {
     }
   };
 
+  const filteredDadosTabela = selectedCongregacao
+    ? dadosTabela.filter(item => item.congregacao === selectedCongregacao)
+    : dadosTabela;
+
   return (
     <div className='flex justify-start flex-col'>
       <Filter onFilterChange={setEventoId} />
 
-      {/* Exibir quantidades de pagas e não pagas */}
       <div className="flex gap-4 mb-4">
         <div className="p-4 bg-green-100 rounded-lg">
           <span className="text-green-700 font-bold">Pagas: {quantidadePagas}</span>
@@ -134,7 +156,26 @@ const Home: React.FC = () => {
         </div>
       </div>
 
-      <Table dadosTabela={dadosTabela} colunasTabela={columns} renderCell={renderCell} onEdit={handleEdit} />
+      <div className="mb-4">
+        <label htmlFor="congregacao" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+          Filtrar por Congregação:
+        </label>
+        <select
+          id="congregacao"
+          value={selectedCongregacao ?? ''}
+          onChange={(e) => setSelectedCongregacao(e.target.value)}
+          className="block w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+        >
+          <option value="">Todas</option>
+          {congregacoes.map((congregacao, index) => (
+            <option key={index} value={congregacao}>
+              {congregacao}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <Table dadosTabela={filteredDadosTabela} colunasTabela={columns} renderCell={renderCell} onEdit={handleEdit} />
       <FormCadastro />
     </div>
   );

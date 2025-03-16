@@ -1,41 +1,94 @@
-import React, { useState, useMemo } from 'react';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+'use client'; // Indica que este é um Client Component
 
-const exportToPDF = () => {
-  const input = document.getElementById('table-to-export'); // ID da tabela
-  if (input) {
-    html2canvas(input).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4'); // A4 size page of PDF
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
+import React from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+// Função para exportar para PDF
+const exportToPDF = (dadosTabela: any[], colunasTabela: string[], congregacaoSelecionada?: string) => {
+  if (!dadosTabela || !colunasTabela) return; // Verifica se os dados estão definidos
 
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+  const pdf = new jsPDF('p', 'mm', 'a4'); // A4 size page of PDF
+
+  // Adicionando título ao PDF
+  pdf.setFontSize(16);
+  const titulo = congregacaoSelecionada
+    ? `Relatório de Participantes - ${congregacaoSelecionada}`
+    : 'Relatório de Participantes';
+  pdf.text(titulo, 105, 20, { align: 'center' });
+
+  // Definir o estilo da tabela (fontes, etc.)
+  pdf.setFontSize(12);
+
+  // Preparar os dados para a tabela
+  const header = colunasTabela; // Cabeçalho como array de strings
+  const body = dadosTabela.map((item) => {
+    return colunasTabela.map((coluna) => {
+      // Mapeia as colunas para os campos corretos no objeto
+      switch (coluna) {
+        case 'participante':
+          return item.nomePessoa;
+        case 'igreja':
+          return item.congregacao;
+        case 'evento':
+          return item.nomeEvento;
+        case 'valor pago':
+          const valorPago = parseFloat(item.valorTotalPago);
+          const custoPorPessoa = item.custoPorPessoa;
+          const tipoPagamento = item.tipoPagamento;
+          const deveSerVerde = tipoPagamento === 1 || valorPago >= custoPorPessoa;
+          const amarelo = valorPago > 0 && valorPago < custoPorPessoa;
+
+          if (deveSerVerde) {
+            return { content: valorPago.toFixed(2), styles: { textColor: [0, 128, 0] } }; // Verde
+          } else if (amarelo) {
+            return { content: valorPago.toFixed(2), styles: { textColor: [255, 165, 0] } }; // Amarelo
+          } else {
+            return { content: valorPago.toFixed(2), styles: { textColor: [255, 0, 0] } }; // Vermelho
+          }
+        default:
+          return '';
       }
-
-      pdf.save('tabela.pdf'); // Nome do arquivo PDF
     });
-  }
+  });
+
+  // Adicionar a tabela ao PDF
+  autoTable(pdf, {
+    head: [header], // Cabeçalho como array de arrays
+    body: body, // Dados como array de arrays
+    startY: 30, // Posição inicial da tabela
+    theme: 'grid', // Tema da tabela
+    styles: { fontSize: 10 }, // Estilo geral da tabela
+    headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255] }, // Estilo do cabeçalho
+  });
+
+  // Salvar o PDF com o nome de arquivo
+  pdf.save('relatorio_participantes.pdf');
 };
 
-const exportToCSV = (dadosTabela: any[], colunasTabela: string[], renderCell: (item: any, column: string) => React.ReactNode) => {
+// Função para exportar para CSV
+const exportToCSV = (dadosTabela: any[], colunasTabela: string[]) => {
+  if (!dadosTabela || !colunasTabela) return; // Verifica se os dados estão definidos
+
   // Cabeçalho do CSV (nomes das colunas)
   const header = colunasTabela.join(',') + '\n';
 
   // Dados da tabela em formato CSV
   const rows = dadosTabela.map((item) =>
-    colunasTabela.map((coluna) => renderCell(item, coluna)).join(',')
+    colunasTabela.map((coluna) => {
+      switch (coluna) {
+        case 'participante':
+          return item.nomePessoa;
+        case 'igreja':
+          return item.congregacao;
+        case 'evento':
+          return item.nomeEvento;
+        case 'valor pago':
+          return item.valorTotalPago;
+        default:
+          return '';
+      }
+    }).join(',')
   ).join('\n');
 
   // Combina cabeçalho e dados
@@ -52,69 +105,47 @@ const exportToCSV = (dadosTabela: any[], colunasTabela: string[], renderCell: (i
   URL.revokeObjectURL(link.href); // Limpa o URL criado
 };
 
+// Interface para as props do componente Table
 interface TableProps {
   dadosTabela: any[];
   colunasTabela: string[];
   renderCell: (item: any, column: string) => React.ReactNode;
   onEdit: (item: any) => void;
+  congregacaoSelecionada?: string;
 }
 
-const Table: React.FC<TableProps> = ({ dadosTabela, colunasTabela, renderCell, onEdit }) => {
-  const [congregacaoFiltro, setCongregacaoFiltro] = useState<string>('');
-  
-  // Filtra os dados com base na congregação selecionada
-  const dadosFiltrados = useMemo(() => {
-    if (!congregacaoFiltro) {
-      return dadosTabela; // Se nenhum filtro for selecionado, retorna todos os dados
-    }
-    return dadosTabela.filter(item => item.congregacao === congregacaoFiltro); // Filtra os dados pela congregação
-  }, [dadosTabela, congregacaoFiltro]);
-
-  const congregacoes = useMemo(() => {
-    // Cria uma lista de congregações únicas a partir dos dados
-    return Array.from(new Set(dadosTabela.map(item => item.congregacao)));
-  }, [dadosTabela]);
-
-  const count = dadosFiltrados.length;
+// Componente Table
+const Table: React.FC<TableProps> = ({
+  dadosTabela = [], // Valor padrão para evitar undefined
+  colunasTabela = [], // Valor padrão para evitar undefined
+  renderCell,
+  onEdit,
+  congregacaoSelecionada,
+}) => {
+  const count = dadosTabela.length;
 
   return (
     <div className="relative overflow-x-auto pl-0 pr-8">
       <h2 className="text-lg font-semibold mb-4">Total de pessoas: {count}</h2>
 
-      {/* Filtro de Congregação */}
-      <div className="mb-4">
-        <label htmlFor="congregacao" className="text-sm mr-2">Filtrar por Congregação:</label>
-        <select
-          id="congregacao"
-          value={congregacaoFiltro}
-          onChange={(e) => setCongregacaoFiltro(e.target.value)}
-          className="px-4 py-2 border rounded"
-        >
-          <option value="">Todas</option>
-          {congregacoes.map((congregacao, index) => (
-            <option key={index} value={congregacao}>
-              {congregacao}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Botões de exportação */}
+      {/* Botão para exportar PDF */}
       <button
-        onClick={exportToPDF}
+        onClick={() => exportToPDF(dadosTabela, colunasTabela, congregacaoSelecionada)}
         className="bg-blue-500 text-white px-4 py-2 rounded mb-4"
       >
         Exportar para PDF
       </button>
+
+      {/* Botão para exportar CSV */}
       <button
-        onClick={() => exportToCSV(dadosFiltrados, colunasTabela, renderCell)}
+        onClick={() => exportToCSV(dadosTabela, colunasTabela)}
         className="bg-green-500 text-white px-4 py-2 rounded mb-4 ml-2"
       >
         Exportar para Google Planilhas (CSV)
       </button>
 
       {/* Tabela com ID para captura */}
-      <table id="table-to-export" className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
+      <table className="w-full text-sm text-left rtl:text-right text-gray-800 dark:text-gray-600">
         <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
           <tr>
             {colunasTabela.map((coluna, index) => (
@@ -126,7 +157,7 @@ const Table: React.FC<TableProps> = ({ dadosTabela, colunasTabela, renderCell, o
           </tr>
         </thead>
         <tbody>
-          {dadosFiltrados.map((item, index) => (
+          {dadosTabela.map((item, index) => (
             <tr
               key={index}
               className={`${
@@ -139,7 +170,7 @@ const Table: React.FC<TableProps> = ({ dadosTabela, colunasTabela, renderCell, o
                 </td>
               ))}
               <td className="px-6 py-4">
-                <button onClick={() => onEdit(item)}>Editar </button>
+                <button onClick={() => onEdit(item)}>Editar</button>
               </td>
             </tr>
           ))}
